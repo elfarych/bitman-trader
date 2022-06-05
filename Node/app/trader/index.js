@@ -1,8 +1,14 @@
 const trade = require('./trade')
 
 let futuresCoinsSymbols
+let allTradeCoins
+let allTradeCoinsObj
 let tradeCoins
+let tradeCoinsObj
 let tradeCoinsSymbols
+let nonFuturesTradeCoins
+let nonFuturesTradeCoinsObj
+let nonFuturesTradeCoinsSymbols
 const fiatSymbols = ['AUD', 'BDR', 'BRL', 'EUR', 'GBP', 'RUB', 'TRY', 'TUSD', 'USDC', 'DAI', 'UAH', 'VAI', 'IDRT', 'NGN', 'USDP', 'BTTC', 'BUSD']
 
 
@@ -19,15 +25,61 @@ const startStream = () => {
     const ws = new $WebSocket(`${$appConfig.binanceSpotStreamURI}/!bookTicker`)
     ws.onmessage = (event) => {
         const data = JSON.parse(event.data)
+        const bidSum = data.b * data.B
+
+        // Анализ фьючерсных пар
         if (tradeCoinsSymbols.includes(data.s)) {
-            const coin = tradeCoins.find(item => item.symbol === data.s)
-            const bidSum = data.b * data.B
+            const quoteVolume = parseFloat(tradeCoinsObj[data.s]?.quoteVolume)
             const askSum = data.a * data.A
-            if (bidSum >= parseFloat(coin.quoteVolume) * 0.05) {
-                trade.start(data.s, coin.quoteVolume * 0.025, true)
+            if (bidSum >= quoteVolume * 0.088) {
+                trade.startFuturesTrade(data.s, quoteVolume * 0.044, false)
             }
-            if (askSum >= parseFloat(coin.quoteVolume) * 0.05) {
-                trade.start(data.s,coin.quoteVolume * 0.025, false)
+            if (askSum >= quoteVolume * 0.088) {
+                trade.startFuturesTrade(data.s, quoteVolume * 0.044, true)
+            }
+        }
+
+        // Анализ пар без фьючерсов
+        if (nonFuturesTradeCoinsSymbols.includes(data.s)) {
+            const quoteVolume = parseFloat(nonFuturesTradeCoinsObj[data.s]?.quoteVolume)
+            if (bidSum >= quoteVolume * 0.088) {
+                trade.startSpotTrade(data.s, quoteVolume * 0.05)
+            }
+        }
+    }
+}
+
+
+const tradesStream = () => {
+    tradeCoinsSymbols.forEach(symbol => startTradesStream(symbol, false))
+    nonFuturesTradeCoinsSymbols.forEach(symbol => startTradesStream(symbol, true))
+}
+
+
+const startTradesStream = (symbol, spot = false) => {
+    // Data example
+    // {
+    //     "e": "trade",     // Event type
+    //     "E": 123456789,   // Event time
+    //     "s": "BNBBTC",    // Symbol
+    //     "t": 12345,       // Trade ID
+    //     "p": "0.001",     // Price
+    //     "q": "100",       // Quantity
+    //     "b": 88,          // Buyer order ID
+    //     "a": 50,          // Seller order ID
+    //     "T": 123456785,   // Trade time
+    //     "m": true,        // Is the buyer the market maker?
+    //     "M": true         // Ignore
+    // }
+    const ws = new $WebSocket(`${$appConfig.binanceSpotStreamURI}/${symbol.toLowerCase()}@trade`)
+    ws.onmessage = (event) => {
+        const data = JSON.parse(event.data)
+        if (data.m) {
+            const sum = data.p * data.q
+            const quoteVolume = parseFloat(allTradeCoinsObj[data.s]?.quoteVolume)
+            if (sum >= quoteVolume * 0.075) {
+                if (spot) trade.startSpotTrade(data.s, quoteVolume * 0.05)
+                else trade.startFuturesTrade(data.s, quoteVolume * 0.044, true)
             }
         }
     }
@@ -45,7 +97,7 @@ const getFuturesTradeCoins = async () => {
     }
 }
 
-const getSpotTradeFilteredCoins = async () => {
+const getTradeFilteredCoins = async () => {
     try {
         await $axios(`${$appConfig.binanceSpotURI}/api/v3/ticker/24hr`)
             .then(res => {
@@ -54,17 +106,40 @@ const getSpotTradeFilteredCoins = async () => {
                         && !fiatSymbols.includes(item.symbol.replace('USDT', '')) // Исключаем фиат и стейблы
                         && futuresCoinsSymbols.includes(item.symbol) // Только пары с фьючерсами
                     )
+                nonFuturesTradeCoins = res.data
+                    .filter(item => item.symbol.endsWith('USDT') // Только пары с USDT
+                        && !fiatSymbols.includes(item.symbol.replace('USDT', '')) // Исключаем фиат и стейблы
+                        && !futuresCoinsSymbols.includes(item.symbol) // Только пары без фьючерсами
+                    )
+                allTradeCoins = res.data.filter(item => item.symbol.endsWith('USDT')) // Все пары с USDT
                 tradeCoinsSymbols = tradeCoins.map(item => item.symbol)
+                nonFuturesTradeCoinsSymbols = nonFuturesTradeCoins.map(item => item.symbol)
+
+                nonFuturesTradeCoinsObj = getTradeCoinsObjects(nonFuturesTradeCoins)
+                tradeCoinsObj = getTradeCoinsObjects(tradeCoins)
+                allTradeCoinsObj = getTradeCoinsObjects(allTradeCoins)
             })
     } catch (err) {
         $errorHandler(err)
     }
 }
 
+const getTradeCoinsObjects = (coins) => {
+    const tradeCoinsObject = {}
+    coins.forEach(item => {
+        tradeCoinsObject[item.symbol] = item
+    })
+    return tradeCoinsObject
+}
+
 const start = async () => {
     await getFuturesTradeCoins()
-    await getSpotTradeFilteredCoins()
+    await getTradeFilteredCoins()
     startStream()
+    // tradesStream()
+    setInterval(() => {
+        getTradeFilteredCoins()
+    }, 60000)
 }
 
 
