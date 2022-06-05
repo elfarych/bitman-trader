@@ -8,11 +8,12 @@ const appConfig = {
     binanceSpotStreamURI: 'wss://stream.binance.com:9443/ws',
     binanceFuturesStreamURI: 'wss://fstream.binance.com/ws',
     tgBotChatId: -1001655051107,
-    tgBotToken: '5530230296:AAF95jjdB7CZvnbUOzZnGm5vXTcrOA_wMa0'
+    tgBotToken: '5530230296:AAF95jjdB7CZvnbUOzZnGm5vXTcrOA_wMa0',
+    tgImageCreatorKey: 'd6SAymYj7E3nsIATWmwXI67T49JbNpX58WvMjt4u'
 }
 
 const token = appConfig.tgBotToken
-const bot = new TelegramBot(token, { polling: true })
+const bot = new TelegramBot(token, {polling: true})
 
 
 const getDifferencePercent = (val1, val2) => {
@@ -20,14 +21,14 @@ const getDifferencePercent = (val1, val2) => {
         val1 = parseFloat(val1)
         val2 = parseFloat(val2)
     }
-    return (val2 - val1)/val1 * 100
+    return (val2 - val1) / val1 * 100
 }
 
 const errorHandler = (err) => bot.sendMessage(appConfig.tgBotChatId, err.message)
 const logger = (log) => bot.sendMessage(appConfig.tgBotChatId, log)
 
-const botSendMessage = (message) => bot.sendMessage(appConfig.tgBotChatId, message)
 
+const botSendMessage = (message) => bot.sendMessage(appConfig.tgBotChatId, message)
 
 const setGlobals = () => {
     global.$getDifferencePercent = getDifferencePercent

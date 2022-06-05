@@ -3,4 +3,4 @@ const globals = require('./globals')
 
 
 globals.setGlobals()
-trader.start().then(() => $logger('Trader started...'))
+trader.start().then(() => $logger(`Trader started...`))

@@ -11,7 +11,17 @@ const inTradeCoins = []
 
 
 const report = () => {
-    $botSendMessage(`Открытые сделки: ${inTradeCoins.length}`)
+    $botSendMessage(`
+    Открытые сделки: ${inTradeCoins.length}
+    
+    FUTURES:
+    Убыточные сделки: ${lossCount} (${lossCount * 3}%)
+    Прибыльные сделки: ${profitCount} (${profitPercent}%) 
+    
+    SPOT:
+    Убыточные сделки: ${spotLossCount} (${spotLossCount * 5}%)
+    Прибыльные сделки: ${spotProfitCount} (${spotProfitPercent}%) 
+    `)
 }
 
 
@@ -20,8 +30,9 @@ const startFuturesTrade = (symbol, stopAskSum, buy) => {
     else sellFuturesOrderSocket(symbol, stopAskSum)
 }
 
-const startSpotTrade = (symbol, stopAskSum) => {
-    buySpotOrderSocket(symbol, stopAskSum)
+const startSpotTrade = async (symbol, stopAskSum) => {
+    const lastChangePercent = await getLastPriceChangePercent(symbol)
+    if(lastChangePercent < 3) buySpotOrderSocket(symbol, stopAskSum)
 }
 
 const buyFuturesOrderSocket = (symbol, stopAskSum) => {
@@ -41,7 +52,7 @@ const buyFuturesOrderSocket = (symbol, stopAskSum) => {
 
             $botSendMessage(`
                 ${symbol} | FUTURES
-                \n\n Buy ${buyPrice}
+                Buy ${buyPrice}
             `)
 
         }
@@ -52,36 +63,19 @@ const buyFuturesOrderSocket = (symbol, stopAskSum) => {
 
             $botSendMessage(`
                 ${symbol} Stop loss | FUTURES
-                
-                \n Buy ${buyPrice} -> Sell ${data.c} (-3%)
-                
-                \n\n Промежуточный итог Futures: 
-                \n Убыточные сделки: ${lossCount} (${lossCount * 3}%)
-                \n Прибыльные сделки: ${profitCount} (${profitPercent}%) 
-                
-                \n\n Промежуточный итог Spot: 
-                \n Убыточные сделки: ${spotLossCount} (${spotLossCount * 5}%)
-                \n Прибыльные сделки: ${spotProfitCount} (${spotProfitPercent}%)  
+                Buy ${buyPrice} -> Sell ${data.c} (-3%)
             `)
             ws.close()
         }
 
-        if (askSum >= stopAskSum && $getDifferencePercent(buyPrice, data.c) >= 2.5) {
+        if (askSum >= stopAskSum && $getDifferencePercent(buyPrice, data.c) >= 3) {
             profitCount ++
             profitPercent += $getDifferencePercent(buyPrice, data.c)
             deleteInTradesCoin(symbol)
 
             $botSendMessage(`
                 ${symbol} Take profit | FUTURES
-                \n Buy ${buyPrice} -> Sell ${data.c} (+${$getDifferencePercent(buyPrice, data.c).toFixed(2)}%)
-                
-                \n\n Промежуточный итог Futures: 
-                \n Убыточные сделки: ${lossCount} (${lossCount * 3}%)
-                \n Прибыльные сделки: ${profitCount} (${profitPercent}%) 
-                
-                \n\n Промежуточный итог Spot: 
-                \n Убыточные сделки: ${spotLossCount} (${spotLossCount * 5}%)
-                \n Прибыльные сделки: ${spotProfitCount} (${spotProfitPercent}%)  
+                Buy ${buyPrice} -> Sell ${data.c} (+${$getDifferencePercent(buyPrice, data.c).toFixed(2)}%)
             `)
             ws.close()
         }
@@ -111,7 +105,7 @@ const sellFuturesOrderSocket = (symbol, stopAskSum) => {
 
             $botSendMessage(`
                 ${symbol} | FUTURES
-                \n Sell ${sellPrice}
+                Sell ${sellPrice}
             `)
         }
 
@@ -121,42 +115,20 @@ const sellFuturesOrderSocket = (symbol, stopAskSum) => {
 
             $botSendMessage(`
                 ${symbol} Stop loss | FUTURES
-                
-                \n Sell ${sellPrice} -> Buy ${data.c} (-3%)
-                
-                \n\n Промежуточный итог Futures: 
-                \n Убыточные сделки: ${lossCount} (${lossCount * 3}%)
-                \n Прибыльные сделки: ${profitCount} (${profitPercent}%) 
-                
-                \n\n Промежуточный итог Spot: 
-                \n Убыточные сделки: ${spotLossCount} (${spotLossCount * 5}%)
-                \n Прибыльные сделки: ${spotProfitCount} (${spotProfitPercent}%)  
-                
-                \n\n Открытые сделки: ${inTradeCoins.length}
+                Sell ${sellPrice} -> Buy ${data.c} (-3%)
             `)
 
             ws.close()
         }
 
-        if (bidSum >= stopAskSum && $getDifferencePercent(sellPrice, data.c) <= -2.5) {
+        if (bidSum >= stopAskSum && $getDifferencePercent(sellPrice, data.c) <= -3) {
             profitCount ++
             profitPercent += $getDifferencePercent(sellPrice, data.c)
             deleteInTradesCoin(symbol)
 
             $botSendMessage(`
                 ${symbol} Take profit | FUTURES
-                
-                \n Sell ${sellPrice} -> Buy ${data.c} (+${Math.abs($getDifferencePercent(sellPrice, data.c)).toFixed(2)}%)
-                
-                \n\n Промежуточный итог Futures: 
-                \n Убыточные сделки: ${lossCount} (${lossCount * 3}%)
-                \n Прибыльные сделки: ${profitCount} (${profitPercent}%) 
-                
-                \n\n Промежуточный итог Spot: 
-                \n Убыточные сделки: ${spotLossCount} (${spotLossCount * 5}%)
-                \n Прибыльные сделки: ${spotProfitCount} (${spotProfitPercent}%)  
-                
-                \n\n Открытые сделки: ${inTradeCoins.length}
+                Sell ${sellPrice} -> Buy ${data.c} (+${Math.abs($getDifferencePercent(sellPrice, data.c)).toFixed(2)}%)
             `)
 
             ws.close()
@@ -186,7 +158,7 @@ const buySpotOrderSocket = (symbol, stopAskSum) => {
             buyPrice = data.c
             $botSendMessage(`
                 ${symbol} | SPOT
-                \n Buy ${buyPrice}
+                Buy ${buyPrice}
             `)
         }
 
@@ -196,41 +168,20 @@ const buySpotOrderSocket = (symbol, stopAskSum) => {
 
             $botSendMessage(`
                 ${symbol} Stop loss | SPOT
-                
-                \n Buy ${buyPrice} -> Sell ${data.c} (-5%)
-                
-                \n\n Промежуточный итог Futures: 
-                \n Убыточные сделки: ${lossCount} (${lossCount * 3}%)
-                \n Прибыльные сделки: ${profitCount} (${profitPercent}%) 
-                
-                \n\n Промежуточный итог Spot: 
-                \n Убыточные сделки: ${spotLossCount} (${spotLossCount * 5}%)
-                \n Прибыльные сделки: ${spotProfitCount} (${spotProfitPercent}%) 
-                
-                \n\n Открытые сделки: ${inTradeCoins.length} 
+                Buy ${buyPrice} -> Sell ${data.c} (-5%)
             `)
 
             ws.close()
         }
 
-        if (askSum >= stopAskSum && $getDifferencePercent(buyPrice, data.c) >= 2.5) {
+        if (askSum >= stopAskSum && $getDifferencePercent(buyPrice, data.c) >= 5) {
             spotProfitCount ++
             spotProfitPercent += $getDifferencePercent(buyPrice, data.c)
             deleteInTradesCoin(symbol)
 
             $botSendMessage(`
-                ${symbol} Take profit | SPOT      
-                \n Buy ${buyPrice} -> Sell ${data.c} (+${$getDifferencePercent(buyPrice, data.c).toFixed(2)}%)
-                
-                \n\n Промежуточный итог Futures: 
-                \n Убыточные сделки ${lossCount} (${lossCount * 3}%)
-                \n Прибыльные сделки ${profitCount} (${profitPercent}%) 
-                
-                \n\n Промежуточный итог Spot: 
-                \n Убыточные сделки ${spotLossCount} (${spotLossCount * 5}%)
-                \n Прибыльные сделки ${spotProfitCount} (${spotProfitPercent}%)  
-                
-                \n\n Открытые сделки ${inTradeCoins.length}
+                ${symbol} Take profit | SPOT
+                Buy ${buyPrice} -> Sell ${data.c} (+${$getDifferencePercent(buyPrice, data.c).toFixed(2)}%)
             `)
             ws.close()
         }
@@ -241,6 +192,23 @@ const buySpotOrderSocket = (symbol, stopAskSum) => {
         }
     }
 
+}
+
+
+const getLastPriceChangePercent = async (symbol) => {
+    let changePercent = 100
+    try {
+        await $axios(`${$appConfig.binanceSpotURI}/api/v3/klines`, {
+            params: {
+                symbol,
+                interval: '5m',
+                limit: 2
+            }
+        }).then(res => changePercent = $getDifferencePercent(res.data[0][1], res.data[1][4]))
+    } catch (err) {
+        await $errorHandler(err)
+    }
+    return changePercent
 }
 
 
