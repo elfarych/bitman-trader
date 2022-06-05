@@ -140,6 +140,10 @@ const start = async () => {
     setInterval(() => {
         getTradeFilteredCoins()
     }, 60000)
+
+    setInterval(() => {
+        trade.report()
+    }, 1000*60*60)
 }
 
 

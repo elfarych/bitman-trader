@@ -10,6 +10,11 @@ let spotProfitPercent = 0
 const inTradeCoins = []
 
 
+const report = () => {
+    $botSendMessage(`Открытые сделки: ${inTradeCoins.length}`)
+}
+
+
 const startFuturesTrade = (symbol, stopAskSum, buy) => {
     if (buy) buyFuturesOrderSocket(symbol, stopAskSum)
     else sellFuturesOrderSocket(symbol, stopAskSum)
@@ -246,7 +251,8 @@ function deleteInTradesCoin(symbol) {
 
 module.exports = {
     startFuturesTrade,
-    startSpotTrade
+    startSpotTrade,
+    report
 }
 
 
