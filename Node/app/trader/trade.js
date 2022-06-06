@@ -14,13 +14,8 @@ const report = () => {
     $botSendMessage(`
     Открытые сделки: ${inTradeCoins.length}
     
-    FUTURES:
-    Убыточные сделки: ${lossCount} (${lossCount * 3}%)
-    Прибыльные сделки: ${profitCount} (${profitPercent}%) 
-    
-    SPOT:
     Убыточные сделки: ${spotLossCount} (${spotLossCount * 5}%)
-    Прибыльные сделки: ${spotProfitCount} (${spotProfitPercent}%) 
+    Прибыльные сделки: ${spotProfitCount} (${spotProfitPercent.toFixed(2)}%) 
     `)
 }
 
@@ -157,8 +152,7 @@ const buySpotOrderSocket = (symbol, stopAskSum) => {
         if (!buyPrice) {
             buyPrice = data.c
             $botSendMessage(`
-                ${symbol} | SPOT
-                Buy ${buyPrice}
+                ${symbol} | SPOT \n Buy ${buyPrice}
             `)
         }
 
@@ -167,21 +161,19 @@ const buySpotOrderSocket = (symbol, stopAskSum) => {
             deleteInTradesCoin(symbol)
 
             $botSendMessage(`
-                ${symbol} Stop loss | SPOT
-                Buy ${buyPrice} -> Sell ${data.c} (-5%)
+                ${symbol} Stop loss | SPOT \n Buy ${buyPrice} -> Sell ${data.c} (-5%)
             `)
 
             ws.close()
         }
 
-        if (askSum >= stopAskSum && $getDifferencePercent(buyPrice, data.c) >= 5) {
+        if (askSum >= stopAskSum && $getDifferencePercent(buyPrice, data.c) >= 5.5) {
             spotProfitCount ++
             spotProfitPercent += $getDifferencePercent(buyPrice, data.c)
             deleteInTradesCoin(symbol)
 
             $botSendMessage(`
-                ${symbol} Take profit | SPOT
-                Buy ${buyPrice} -> Sell ${data.c} (+${$getDifferencePercent(buyPrice, data.c).toFixed(2)}%)
+                ${symbol} Take profit | SPOT \n Buy ${buyPrice} -> Sell ${data.c} (+${$getDifferencePercent(buyPrice, data.c).toFixed(2)}%)
             `)
             ws.close()
         }

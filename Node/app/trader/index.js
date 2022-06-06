@@ -28,16 +28,16 @@ const startStream = () => {
         const bidSum = data.b * data.B
 
         // Анализ фьючерсных пар
-        if (tradeCoinsSymbols.includes(data.s)) {
-            const quoteVolume = parseFloat(tradeCoinsObj[data.s]?.quoteVolume)
-            const askSum = data.a * data.A
-            if (bidSum >= quoteVolume * 0.088) {
-                trade.startFuturesTrade(data.s, quoteVolume * 0.044, true)
-            }
-            if (askSum >= quoteVolume * 0.088) {
-                trade.startFuturesTrade(data.s, quoteVolume * 0.044, false)
-            }
-        }
+        // if (tradeCoinsSymbols.includes(data.s)) {
+        //     const quoteVolume = parseFloat(tradeCoinsObj[data.s]?.quoteVolume)
+        //     const askSum = data.a * data.A
+        //     if (bidSum >= quoteVolume * 0.088) {
+        //         trade.startFuturesTrade(data.s, quoteVolume * 0.044, true)
+        //     }
+        //     if (askSum >= quoteVolume * 0.088) {
+        //         trade.startFuturesTrade(data.s, quoteVolume * 0.044, false)
+        //     }
+        // }
 
         // Анализ пар без фьючерсов
         if (nonFuturesTradeCoinsSymbols.includes(data.s)) {
