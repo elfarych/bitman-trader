@@ -42,7 +42,7 @@ const startStream = () => {
         // Анализ пар без фьючерсов
         if (nonFuturesTradeCoinsSymbols.includes(data.s)) {
             const quoteVolume = parseFloat(nonFuturesTradeCoinsObj[data.s]?.quoteVolume)
-            if (bidSum >= quoteVolume * 0.088 && quoteVolume > 300000) {
+            if (bidSum >= quoteVolume * 0.077 && quoteVolume > 100000) {
                 trade.startSpotTrade(data.s, quoteVolume * 0.05)
             }
         }
