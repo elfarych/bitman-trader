@@ -14,8 +14,9 @@ const report = () => {
     $botSendMessage(`
     Открытые сделки: ${inTradeCoins.length}
     
-    Убыточные сделки: ${spotLossCount} (${spotLossCount * 5}%)
-    Прибыльные сделки: ${spotProfitCount} (${spotProfitPercent.toFixed(2)}%) 
+    Закрытые сделки:
+    Убыточные сделки: ${spotLossCount} (-${spotLossCount * 5}%)
+    Прибыльные сделки: ${spotProfitCount} (+${spotProfitPercent.toFixed(2)}%) 
     `)
 }
 

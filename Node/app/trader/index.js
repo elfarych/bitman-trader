@@ -2,6 +2,7 @@ const trade = require('./trade')
 
 let futuresCoinsSymbols
 let allTradeCoins
+let allTradeCoinsSymbols
 let allTradeCoinsObj
 let tradeCoins
 let tradeCoinsObj
@@ -39,11 +40,11 @@ const startStream = () => {
         //     }
         // }
 
-        // Анализ пар без фьючерсов
-        if (nonFuturesTradeCoinsSymbols.includes(data.s)) {
-            const quoteVolume = parseFloat(nonFuturesTradeCoinsObj[data.s]?.quoteVolume)
-            if (bidSum >= quoteVolume * 0.088 && quoteVolume > 300000) {
-                trade.startSpotTrade(data.s, quoteVolume * 0.05)
+        // Анализ пар SPOT
+        if (allTradeCoinsSymbols.includes(data.s)) {
+            const quoteVolume = parseFloat(allTradeCoinsObj[data.s]?.quoteVolume)
+            if (bidSum >= quoteVolume * 0.15 && quoteVolume > 500000) {
+                trade.startSpotTrade(data.s, quoteVolume * 0.088)
             }
         }
     }
@@ -101,22 +102,27 @@ const getTradeFilteredCoins = async () => {
     try {
         await $axios(`${$appConfig.binanceSpotURI}/api/v3/ticker/24hr`)
             .then(res => {
-                tradeCoins = res.data
-                    .filter(item => item.symbol.endsWith('USDT') // Только пары с USDT
-                        && !fiatSymbols.includes(item.symbol.replace('USDT', '')) // Исключаем фиат и стейблы
-                        && futuresCoinsSymbols.includes(item.symbol) // Только пары с фьючерсами
-                    )
-                nonFuturesTradeCoins = res.data
-                    .filter(item => item.symbol.endsWith('USDT') // Только пары с USDT
-                        && !fiatSymbols.includes(item.symbol.replace('USDT', '')) // Исключаем фиат и стейблы
-                        && !futuresCoinsSymbols.includes(item.symbol) // Только пары без фьючерсами
-                    )
-                allTradeCoins = res.data.filter(item => item.symbol.endsWith('USDT')) // Все пары с USDT
-                tradeCoinsSymbols = tradeCoins.map(item => item.symbol)
-                nonFuturesTradeCoinsSymbols = nonFuturesTradeCoins.map(item => item.symbol)
+                // tradeCoins = res.data
+                //     .filter(item => item.symbol.endsWith('USDT') // Только пары с USDT
+                //         && !fiatSymbols.includes(item.symbol.replace('USDT', '')) // Исключаем фиат и стейблы
+                //         && futuresCoinsSymbols.includes(item.symbol) // Только пары с фьючерсами
+                //     )
+                // nonFuturesTradeCoins = res.data
+                //     .filter(item => item.symbol.endsWith('USDT') // Только пары с USDT
+                //         && !fiatSymbols.includes(item.symbol.replace('USDT', '')) // Исключаем фиат и стейблы
+                //         && !futuresCoinsSymbols.includes(item.symbol) // Только пары без фьючерсами
+                //     )
+                allTradeCoins = res.data.filter(item =>
+                    item.symbol.endsWith('USDT')
+                    && !fiatSymbols.includes(item.symbol.replace('USDT', '')) // Исключаем фиат и стейблы
+                ) // Все пары с USDT
+                allTradeCoinsSymbols = allTradeCoins.map(item => item.symbol)
 
-                nonFuturesTradeCoinsObj = getTradeCoinsObjects(nonFuturesTradeCoins)
-                tradeCoinsObj = getTradeCoinsObjects(tradeCoins)
+                // tradeCoinsSymbols = tradeCoins.map(item => item.symbol)
+                // nonFuturesTradeCoinsSymbols = nonFuturesTradeCoins.map(item => item.symbol)
+
+                // nonFuturesTradeCoinsObj = getTradeCoinsObjects(nonFuturesTradeCoins)
+                // tradeCoinsObj = getTradeCoinsObjects(tradeCoins)
                 allTradeCoinsObj = getTradeCoinsObjects(allTradeCoins)
             })
     } catch (err) {

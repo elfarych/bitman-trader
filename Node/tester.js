@@ -1,17 +1,21 @@
-const globals = require('./globals')
-
-
-globals.setGlobals()
+const $axios = require('axios')
 
 let coins
 let ordersAskDifferencesArr = []
 let ordersBidDifferencesArr = []
 const fiatSymbols = ['AUD', 'BDR', 'BRL', 'EUR', 'GBP', 'RUB', 'TRY', 'TUSD', 'USDC', 'DAI', 'UAH', 'VAI', 'IDRT', 'NGN', 'USDP', 'BTTC', 'BUSD']
 
+const $getDifferencePercent = (val1, val2) => {
+    if (typeof val1 === 'string' || typeof val2 === 'string') {
+        val1 = parseFloat(val1)
+        val2 = parseFloat(val2)
+    }
+    return (val2 - val1) / val1 * 100
+}
 
 const getCoins = async () => {
     try {
-        await $axios(`${$appConfig.binanceSpotURI}/api/v3/ticker/24hr`)
+        await $axios(`https://api.binance.com/api/v3/ticker/24hr`)
             .then(res => {
                 coins = res.data
                     .filter(item => item.symbol.endsWith('USDT') // Только пары с USDT
@@ -21,7 +25,7 @@ const getCoins = async () => {
                 console.log(coins.length)
             })
     } catch (err) {
-        $errorHandler(err)
+        console.log(err.message)
     }
 }
 
@@ -30,13 +34,14 @@ const getOrders = async (sliceStart, sliceEnd) => {
     coins.slice(sliceStart, sliceEnd).forEach(item => {
         if (!item) return null
         try {
-             $axios(`${$appConfig.binanceSpotURI}/api/v3/depth`, {
+             $axios(`https://api.binance.com/api/v3/depth`, {
                  params: {
                      limit: 999,
                      symbol: item.symbol
                  }
              })
                 .then(res => {
+                    console.log('loaded...')
                     let bidsSum = 0
                     res.data.bids.forEach(item => {
                         bidsSum += item[0] * item[1]
@@ -49,7 +54,7 @@ const getOrders = async (sliceStart, sliceEnd) => {
                     ordersBidDifferencesArr.push({ symbol: item.symbol.replace('USDT', ''), difference: $getDifferencePercent(asksSum, bidsSum) })
                 })
         } catch (err) {
-            $errorHandler(err)
+            console.log(err.message)
         }
     })
 }
@@ -69,7 +74,7 @@ getCoins().then(() => {
             clearInterval(interval)
             showCoins()
         }
-    }, 3000)
+    }, 4000)
 })
 
 
@@ -77,6 +82,6 @@ const showCoins = () => {
     const sortedAskArr = ordersAskDifferencesArr.sort((a, b) => a.difference < b.difference ? 1 : -1)
     const sortedBidArr = ordersBidDifferencesArr.sort((a, b) => a.difference < b.difference ? 1 : -1)
 
-    console.log('asks ', sortedAskArr.splice(15))
-    console.log('bids ', sortedBidArr.splice(15))
+    console.log('asks ', sortedAskArr.slice(0, 15))
+    console.log('bids ', sortedBidArr.slice(0, 15))
 }
