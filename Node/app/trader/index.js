@@ -43,8 +43,8 @@ const startStream = () => {
         // Анализ пар SPOT
         if (allTradeCoinsSymbols.includes(data.s)) {
             const quoteVolume = parseFloat(allTradeCoinsObj[data.s]?.quoteVolume)
-            if (bidSum >= quoteVolume * 0.15 && quoteVolume > 500000) {
-                trade.startSpotTrade(data.s, quoteVolume * 0.088)
+            if (bidSum >= quoteVolume * 0.1 && quoteVolume > 500000) {
+                trade.startSpotTrade(data.s, quoteVolume * 0.07)
             }
         }
     }
